@@ -1,0 +1,10 @@
+node_modules
+**/dist
+pnpm-lock.yaml
+web-ssh-workspace-project-spec.md
+AGENT.md
+AGENTS.md
+docs/status.md
+tests/main-review.test.ts
+playwright-report
+test-results

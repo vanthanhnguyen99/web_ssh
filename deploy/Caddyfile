@@ -1,0 +1,8 @@
+{
+	default_sni {$WORKSPACE_HOST:localhost}
+}
+
+{$WORKSPACE_HOST:localhost} {
+	tls internal
+	reverse_proxy app:3000
+}

@@ -1,0 +1,15 @@
+[Unit]
+Description=LAN access policy for the Web SSH Workspace Docker HTTPS port
+Requires=docker.service
+After=docker.service ufw.service
+PartOf=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/web-ssh-lan-firewall apply
+ExecReload=/usr/local/sbin/web-ssh-lan-firewall apply
+ExecStop=/usr/local/sbin/web-ssh-lan-firewall remove
+
+[Install]
+WantedBy=multi-user.target

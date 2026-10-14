@@ -1,0 +1,11 @@
+CREATE TABLE users(id uuid PRIMARY KEY, username text NOT NULL UNIQUE, password_hash text NOT NULL, role text NOT NULL DEFAULT 'admin', created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE web_sessions(id uuid PRIMARY KEY, token_hash text NOT NULL UNIQUE, user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE, csrf text NOT NULL, expires_at timestamptz NOT NULL);
+CREATE INDEX web_sessions_expiry ON web_sessions(expires_at);
+CREATE TABLE credentials(id uuid PRIMARY KEY, owner_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE, name text NOT NULL, type text NOT NULL, ciphertext text NOT NULL);
+CREATE TABLE connection_profiles(id uuid PRIMARY KEY, owner_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE, data jsonb NOT NULL);
+CREATE TABLE folders(id uuid PRIMARY KEY, owner_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE, data jsonb NOT NULL);
+CREATE TABLE workspaces(id uuid PRIMARY KEY, owner_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE, name text NOT NULL, layout jsonb NOT NULL);
+CREATE TABLE preferences(owner_id uuid PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE, data jsonb NOT NULL);
+CREATE TABLE trusted_host_keys(id uuid PRIMARY KEY, owner_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE, host text NOT NULL, port integer NOT NULL, algorithm text NOT NULL, fingerprint text NOT NULL, public_key text NOT NULL, first_seen_at timestamptz NOT NULL, last_verified_at timestamptz NOT NULL);
+CREATE UNIQUE INDEX trusted_host_target ON trusted_host_keys(owner_id, host, port);
+CREATE TABLE audit_events(id uuid PRIMARY KEY, user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE, type text NOT NULL, target text NOT NULL, metadata jsonb NOT NULL, created_at timestamptz NOT NULL DEFAULT now());

@@ -1,0 +1,17 @@
+name: web-ssh-workspace-dev
+services:
+  db:
+    image: postgres:17-alpine
+    ports: ["127.0.0.1:55432:5432"]
+    environment:
+      POSTGRES_USER: workspace
+      POSTGRES_PASSWORD: workspace_dev
+      POSTGRES_DB: workspace
+    volumes: [dev_db:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U workspace -d workspace"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+volumes:
+  dev_db:

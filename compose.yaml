@@ -1,0 +1,75 @@
+name: web-ssh-workspace
+services:
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "${HTTPS_BIND_ADDRESS:-0.0.0.0}:${HTTPS_PORT:-8443}:443"
+    environment:
+      WORKSPACE_HOST: ${WORKSPACE_HOST:-localhost}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      app:
+        condition: service_healthy
+    restart: unless-stopped
+  app:
+    build: .
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      SERVE_WEB: "true"
+      APP_ORIGIN: ${APP_ORIGIN:-https://localhost:8443}
+      DATABASE_URL: postgres://workspace:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@db:5432/workspace
+      CREDENTIAL_MASTER_KEY_FILE: /run/secrets/credential_master_key
+      ALLOWED_CIDRS: ${ALLOWED_CIDRS:-}
+      DENIED_CIDRS: ${DENIED_CIDRS:-127.0.0.0/8,::1/128,169.254.0.0/16,fe80::/10,0.0.0.0/8,::/128},172.29.241.0/24
+      ALLOWED_PORTS: ${ALLOWED_PORTS:-22}
+      ALLOWED_DNS_SUFFIXES: ${ALLOWED_DNS_SUFFIXES:-}
+      SESSION_GRACE_SECONDS: ${SESSION_GRACE_SECONDS:-600}
+      SSH_ATTEMPTS_PER_MINUTE: ${SSH_ATTEMPTS_PER_MINUTE:-120}
+      MAX_SSH_SESSIONS: ${MAX_SSH_SESSIONS:-32}
+    secrets:
+      - credential_master_key
+    depends_on:
+      db:
+        condition: service_healthy
+    command:
+      [
+        "sh",
+        "-c",
+        "node apps/server/dist/infrastructure/migrate.js && node apps/server/dist/index.js",
+      ]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    tmpfs: [/tmp]
+    init: true
+    restart: unless-stopped
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: workspace
+      POSTGRES_DB: workspace
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U workspace -d workspace"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.29.241.0/24
+secrets:
+  credential_master_key:
+    file: ${CREDENTIAL_MASTER_KEY_PATH:-./secrets/credential-master-key}
+volumes:
+  db_data:
+  caddy_data:
+  caddy_config:

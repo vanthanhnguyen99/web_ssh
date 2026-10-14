@@ -1,0 +1,46 @@
+{
+  "name": "web-ssh-workspace",
+  "private": true,
+  "packageManager": "pnpm@10.34.7",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @workspace/shared build && concurrently \"pnpm --filter @workspace/server dev\" \"pnpm --filter @workspace/web dev\"",
+    "build": "pnpm --filter @workspace/shared build && pnpm --filter @workspace/server build && pnpm --filter @workspace/web build",
+    "typecheck": "pnpm --filter @workspace/shared build && pnpm -r typecheck",
+    "lint": "eslint .",
+    "test": "pnpm --filter @workspace/shared build && vitest run",
+    "test:integration": "pnpm --filter @workspace/shared build && RUN_SSH_INTEGRATION=1 vitest run tests/ssh.integration.test.ts tests/phase2.integration.test.ts tests/ssh-policy.integration.test.ts",
+    "test:e2e": "playwright test",
+    "db:migrate": "pnpm --filter @workspace/server db:migrate",
+    "admin:create": "pnpm --filter @workspace/server admin:create",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "fixtures:prepare": "sh scripts/prepare-fixture-keys.sh",
+    "test:backup": "RUN_BACKUP_INTEGRATION=1 vitest run tests/main-backup.integration.test.ts",
+    "test:performance": "pnpm --filter @workspace/shared build && RUN_PERFORMANCE_INTEGRATION=1 vitest run tests/main-performance.integration.test.ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "tsx": "^4.21.0",
+    "eslint": "^9.39.0",
+    "@eslint/js": "^9.39.0",
+    "typescript-eslint": "^8.46.0",
+    "globals": "^16.4.0",
+    "vitest": "^3.2.4",
+    "@playwright/test": "^1.56.0",
+    "concurrently": "^9.2.1",
+    "@types/node": "^24.10.0",
+    "prettier": "^3.6.2",
+    "socket.io-client": "^4.8.1"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "argon2",
+      "esbuild",
+      "ssh2"
+    ]
+  },
+  "type": "module"
+}
